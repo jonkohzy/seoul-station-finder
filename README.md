@@ -16,20 +16,6 @@ Open `index.html` in your browser, or publish the folder as described below.
 
 There are no API keys, dependencies, build steps, analytics, or runtime network requests. The website works offline when its files are saved locally. A hosted visit still requires a connection to load the files initially; this is not an installable offline PWA.
 
-## Publish on GitHub Pages
-
-1. Create a GitHub repository, for example `seoul-station-finder`. A public repository works with GitHub Free.
-2. Upload **the contents of this folder** to the repository root. `index.html` must sit directly at the root, alongside `styles.css`, `search.js`, and `app.js`. Do not upload only the ZIP file or leave everything inside an extra enclosing folder.
-3. Commit the files to your `main` branch.
-4. Open the repository's **Settings → Pages**.
-5. Under **Build and deployment**, choose **Deploy from a branch**.
-6. Select **main** and **/(root)**, then **Save**.
-7. Wait for GitHub's deployment to finish. The Pages settings will show your website link, normally `https://YOUR-USERNAME.github.io/seoul-station-finder/`.
-
-The included `.nojekyll` file tells Pages to serve the static site directly. All links to site files are relative, so a repository subpath works without configuration. If your branch has a different name, select that branch instead of `main`.
-
-Official instructions: https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site
-
 ## Map source and scope
 
 The supplied [SlideShare reference](https://www.slideshare.net/slideshow/in-the-zone-78/24189926) informed the English, color-coded schematic presentation. Its image is not redistributed here.
@@ -59,7 +45,3 @@ This is a dated schematic, not a live transit feed. It includes some planned sta
 Edit the `aliases` object in `search.js` to add alternate spellings or nicknames. Its keys must match the English station labels on the map exactly. Replacing the map requires preserving or updating the foreground label selectors used in `app.js`; the source map's `name_en` and `name_en_overlap` groups are the station index.
 
 An optional, feature-detected WebMCP interface exposes `search_stations` and `show_station` in supporting browsers. Normal website use requires no WebMCP support. Native WebMCP integration was not available for validation in the local test browser.
-
-## Validation
-
-Checked in Chrome at desktop and phone widths: station lookup, 11 exact/alias/typo examples, keyboard selection, empty search results, zoom controls, full-map view, recentering, dragging, geometry for all 657 labels, and direct local-file opening. No browser runtime errors were found.
