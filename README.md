@@ -16,6 +16,38 @@ Open `index.html` in your browser, or publish the folder as described below.
 
 There are no API keys, dependencies, build steps, analytics, or runtime network requests. The website works offline when its files are saved locally. A hosted visit still requires a connection to load the files initially; this is not an installable offline PWA.
 
+## Pin stations for trip planning
+
+1. Search for a station and select it, or click its name on the map.
+2. Choose one of the seven rainbow colours: **Red, Orange, Yellow, Green, Blue, Indigo, or Violet**.
+3. Select **Pin station**. A numbered marker and matching coloured highlight remain on the map as you search for other stops.
+
+Your **Pinned stations** list shows each saved stop, its marker number, and its colour. Select a saved stop or its map marker to bring up its controls. Multiple stations can use the same colour, so you can group stops by day or activity. Numbers identify the pins in your current list; they are not route or travel-order recommendations and may change when a pin is removed.
+
+### Keep your stops visible
+
+- **Keep all pins in view** is enabled by default. Selecting another station frames it together with your saved pins. Adding a pin also adjusts the map to include your saved stops.
+- **Show all pins** fits just your pinned stations on the map.
+- You can still pan, zoom, or use the full-map button freely. These actions temporarily override automatic framing.
+- **Recenter** zooms to the selected station. Selecting another station restores automatic framing if **Keep all pins in view** is enabled.
+- Turn the checkbox off to zoom to individual search results while retaining all saved markers. **Show all pins** remains available.
+
+### Change or remove pins
+
+- Select a pinned station, then choose another colour to update it immediately.
+- Select **Unpin station**, or use the **×** beside the stop in the pinned list, to remove it.
+- The map and list update together. Searching for a new station does not delete earlier pins.
+
+### Saving and privacy
+
+Pins, their colours, and the keep-in-view preference are saved automatically in this browser on this device. They are restored when you reload or revisit the site. No account or server is involved, and your trip is not uploaded or synced between devices or browsers.
+
+Clearing this site's browser data removes its saved pins. A local copy and a GitHub Pages copy have separate browser storage; local-file saving also depends on the browser and file location. If browser storage is unavailable, pinning still works for the current visit and the site displays a saving-unavailable message.
+
+Pins are available on desktop and mobile. On a phone, swipe the pinned-station list horizontally to reach additional stops. Colour choices have text names, and numbered markers match the saved list.
+
+This feature helps mark and group stops; it does not calculate routes, travel times, or an itinerary.
+
 ## Map source and scope
 
 The supplied [SlideShare reference](https://www.slideshare.net/slideshow/in-the-zone-78/24189926) informed the English, color-coded schematic presentation. Its image is not redistributed here.
@@ -39,6 +71,7 @@ This is a dated schematic, not a live transit feed. It includes some planned sta
 - `styles.css` — desktop and mobile appearance
 - `search.js` — name normalization, aliases, and approximate matching
 - `app.js` — station indexing, zooming, panning, and highlighting
+- `pins.js` — rainbow pins, saved-stop controls, automatic framing, and browser storage
 - `.nojekyll` — GitHub Pages static-site marker
 - `README.md` — these instructions and map attribution
 

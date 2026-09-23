@@ -9,6 +9,7 @@
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23142942'/%3E%3Cpath d='M8 24V9l8 9 8-9v15' fill='none' stroke='white' stroke-width='3'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="styles.css">
   <script src="search.js" defer></script>
+  <script src="pins.js" defer></script>
   <script src="app.js" defer></script>
 </head>
 <body>
@@ -20,6 +21,13 @@
         <div class="search-caption"><span>Partial names &amp; typos welcome</span><kbd>↵</kbd></div>
       </div>
       <div class="results-section"><div class="results-heading"><h2 id="results-title">Popular stations</h2><span id="result-count"></span></div><div id="results" role="listbox" aria-label="Matching stations"></div><p id="empty" hidden>No close matches. Try a shorter name or a different spelling.</p></div>
+      <section class="trip-section" aria-label="Pinned stations">
+        <div class="trip-heading"><h2>Pinned stations <span id="pinned-count">0</span></h2><button id="show-pins" type="button" disabled>Show all pins</button></div>
+        <p id="pins-empty">Find a station, choose a colour, then pin it.</p>
+        <ul id="pinned-list" aria-label="Your pinned stations"></ul>
+        <label class="keep-pins"><input id="keep-pins" type="checkbox" checked> Keep all pins in view</label>
+        <p id="save-status" role="status">Saved in this browser</p>
+      </section>
       <div class="sidebar-bottom"><div class="mini-legend" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><p><strong id="station-count">English stations</strong><br>One map. The whole metropolitan network.</p><details><summary>About this map</summary><p>English schematic by <a href="https://commons.wikimedia.org/wiki/File:Seoul_subway_linemap_en.svg" target="_blank" rel="noopener">IRTC1015 / Wikimedia Commons</a>, released into the public domain. Revision: 29 June 2025. Not to scale; includes some planned stations in grey. This is a station finder, not a live service map.</p><p>Inspired by your <a href="https://www.slideshare.net/slideshow/in-the-zone-78/24189926" target="_blank" rel="noopener">SlideShare reference</a>. Search and map work entirely on your device.</p></details></div>
     </aside>
     <section class="map-panel" aria-label="English Seoul metro map">
@@ -3020,9 +3028,9 @@
 	</g>
 </g>
 </svg>
-</div><div id="map-pin" hidden><span id="pin-name"></span><span class="pin-stem"></span><span class="pin-dot"></span></div></div>
+</div><div id="saved-map-pins"></div><div id="map-pin" hidden><span id="pin-name"></span><span class="pin-stem"></span><span class="pin-dot"></span></div></div>
       <div class="map-controls" aria-label="Map controls"><button id="zoom-in" type="button" aria-label="Zoom in" title="Zoom in (+)">+</button><button id="zoom-out" type="button" aria-label="Zoom out" title="Zoom out (−)">−</button><span class="control-divider"></span><button id="overview" type="button" aria-label="Show full map" title="Show full map (0)">⛶</button></div>
-      <div id="selection-card" hidden><div><p class="eyebrow">STATION FOUND</p><h2 id="selected-name"></h2><p id="selected-note">Highlighted on the map</p></div><button id="recenter" type="button" title="Zoom back to selected station">Recenter <span aria-hidden="true">↗</span></button></div>
+      <div id="selection-card" hidden><div class="selection-heading"><div><p class="eyebrow">STATION FOUND</p><h2 id="selected-name"></h2><p id="selected-note">Highlighted on the map</p></div><button id="recenter" type="button" title="Zoom back to selected station">Recenter <span aria-hidden="true">↗</span></button></div><div class="pin-editor"><div><p id="colour-label">Pin colour: <strong id="colour-name">Red</strong></p><div id="pin-colours" role="group" aria-labelledby="colour-label"></div></div><button id="toggle-pin" type="button">Pin station</button></div></div>
       <div class="map-footer"><span>June 2025 map · Drag, scroll or pinch to explore</span><span id="zoom-level">100%</span></div>
     </section>
   </main>
