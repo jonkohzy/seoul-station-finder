@@ -1,0 +1,58 @@
+(() => {
+  'use strict';
+  const $=id=>document.getElementById(id), viewport=$('viewport'), stage=$('map-stage'), svg=stage.querySelector('svg'), search=$('search');
+  const NS='http://www.w3.org/2000/svg', W=5724,H=6516;
+  const stations=[], byId=new Map(), dedup=new Set();
+  // These two groups contain the foreground English station labels, excluding
+  // the legend and duplicated white outlines elsewhere in the source map.
+  svg.querySelectorAll('#name_en text, #name_en_overlap text').forEach(el=>{
+    const name=(el.children.length?Array.from(el.children).map(t=>t.textContent).join(' '):el.textContent).replace(/\s+/g,' ').trim();
+    const matrix=el.transform.baseVal.consolidate()?.matrix;
+    if(!name||!matrix||el.closest('.st26'))return;
+    const key=name+'|'+Math.round(matrix.e)+'|'+Math.round(matrix.f);
+    if(dedup.has(key))return;dedup.add(key);
+    const box=el.getBBox();
+    const points=[[box.x,box.y],[box.x+box.width,box.y],[box.x,box.y+box.height],[box.x+box.width,box.y+box.height]].map(([x,y])=>new DOMPoint(x,y).matrixTransform(matrix));
+    const left=Math.min(...points.map(p=>p.x)),top=Math.min(...points.map(p=>p.y)),right=Math.max(...points.map(p=>p.x)),bottom=Math.max(...points.map(p=>p.y));
+    const id='station-'+stations.length;
+    const station={id,name,el,terms:StationSearch.terms(name),box:{x:left,y:top,width:right-left,height:bottom-top},x:(left+right)/2,y:(top+bottom)/2,planned:el.classList.contains('st56')};
+    el.dataset.stationId=id;stations.push(station);byId.set(id,station);
+  });
+  const overlay=document.createElementNS(NS,'g');overlay.setAttribute('pointer-events','none');svg.append(overlay);
+  let scale=.4,tx=0,ty=0,selected=null,results=[],active=0,animation=0;
+  const popular=['Seoul Station','Gangnam','Hongik Univ.','Myeong-dong','Jamsil',"Gimpo Int'l Airport"];
+  const fitScale=()=>Math.min((viewport.clientWidth-40)/W,(viewport.clientHeight-40)/H);
+  function render(){stage.style.transform=`translate(${tx}px,${ty}px) scale(${scale})`;$('zoom-level').textContent=Math.round(scale*100)+'%';if(selected){$('map-pin').style.left=(selected.x*scale+tx)+'px';$('map-pin').style.top=((selected.box.y-9)*scale+ty)+'px';}}
+  function clamp(){scale=Math.max(fitScale(),Math.min(3,scale));const w=viewport.clientWidth,h=viewport.clientHeight;tx=Math.max(80-W*scale,Math.min(w-80,tx));ty=Math.max(80-H*scale,Math.min(h-80,ty));}
+  function moveTo(x,y,s,smooth=true){cancelAnimationFrame(animation);const target={s:Math.max(fitScale(),Math.min(3,s)),x:0,y:0};target.x=viewport.clientWidth/2-x*target.s;target.y=viewport.clientHeight*.43-y*target.s;const from={s:scale,x:tx,y:ty},start=performance.now();const duration=smooth&&!matchMedia('(prefers-reduced-motion: reduce)').matches?400:0;function frame(now){const t=duration?Math.min(1,(now-start)/duration):1,e=1-Math.pow(1-t,3);scale=from.s+(target.s-from.s)*e;tx=from.x+(target.x-from.x)*e;ty=from.y+(target.y-from.y)*e;clamp();render();if(t<1)animation=requestAnimationFrame(frame);}animation=requestAnimationFrame(frame);}
+  function fullMap(){cancelAnimationFrame(animation);scale=fitScale();tx=(viewport.clientWidth-W*scale)/2;ty=(viewport.clientHeight-H*scale)/2;render();}
+  function focusStation(station){if(matchMedia('(max-width:760px)').matches)search.blur();selected=station;overlay.replaceChildren();const rect=document.createElementNS(NS,'rect');const b=station.box;Object.entries({x:b.x-7,y:b.y-7,width:b.width+14,height:b.height+14,rx:5,fill:'#d9eaff','fill-opacity':'.8',stroke:'#155fd1','stroke-width':2}).forEach(([k,v])=>rect.setAttribute(k,v));overlay.append(rect);const label=station.el.cloneNode(true);label.removeAttribute('data-station-id');overlay.append(label);$('selected-name').textContent=station.name;$('pin-name').textContent=station.name;$('selected-note').textContent=station.planned?'Shown as planned on the June 2025 map':'Highlighted on the map';$('selection-card').hidden=false;$('map-pin').hidden=false;moveTo(station.x,station.y,Math.min(1.65,(viewport.clientWidth-100)/(b.width+70)));$('announcement').textContent=station.name+'. Zoomed in and highlighted on the map.';document.querySelector('.sidebar').classList.remove('search-open');search.setAttribute('aria-expanded',String(!matchMedia('(max-width:760px)').matches));renderResults();}
+  function renderResults(){const list=$('results');list.replaceChildren();results.forEach((r,i)=>{const s=r.station;const option=document.createElement('div');option.id='result-'+i;option.className='result'+(i===active?' active':'')+(selected===s?' selected':'');option.setAttribute('role','option');option.setAttribute('aria-selected',String(i===active));option.dataset.id=s.id;const symbol=document.createElement('span');symbol.className='station-symbol';symbol.setAttribute('aria-hidden','true');const text=document.createElement('span'),name=document.createElement('span');name.className='result-name';name.textContent=s.name;text.append(name);if(r.score>=30||s.planned){const note=document.createElement('span');note.className='result-note';note.textContent=s.planned?'Planned on this map':'Similar spelling';text.append(note);}const arrow=document.createElement('span');arrow.className='result-arrow';arrow.textContent='↗';arrow.setAttribute('aria-hidden','true');option.append(symbol,text,arrow);option.addEventListener('pointerdown',e=>e.preventDefault());option.addEventListener('click',()=>focusStation(s));list.append(option);});if(results[active])search.setAttribute('aria-activedescendant','result-'+active);else search.removeAttribute('aria-activedescendant');}
+  function updateResults(){const q=search.value.trim();const matches=StationSearch.rank(q,stations);results=q?matches.slice(0,20):popular.map(n=>({station:stations.find(s=>s.name===n),score:0})).filter(r=>r.station);active=0;$('results-title').textContent=q?'Matching stations':'Popular stations';$('result-count').textContent=q?String(matches.length)+(matches.length>20?' · top 20':''):'';$('empty').hidden=results.length>0;$('clear').hidden=!q;renderResults();if(q)$('announcement').textContent=matches.length+' matching stations.';}
+  function openSearch(){document.querySelector('.sidebar').classList.add('search-open');search.setAttribute('aria-expanded','true');}
+  search.addEventListener('input',()=>{openSearch();updateResults();});search.addEventListener('focus',openSearch);
+  search.addEventListener('keydown',e=>{if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();openSearch();if(results.length){active=(active+(e.key==='ArrowDown'?1:-1)+results.length)%results.length;renderResults();$('result-'+active).scrollIntoView({block:'nearest'});}}if(e.key==='Escape'){document.querySelector('.sidebar').classList.remove('search-open');search.setAttribute('aria-expanded',String(!matchMedia('(max-width:760px)').matches));search.blur();}});
+  $('search-form').addEventListener('submit',e=>{e.preventDefault();if(results[active]){focusStation(results[active].station);search.blur();}});
+  $('clear').addEventListener('click',()=>{search.value='';updateResults();search.focus();});
+  $('recenter').addEventListener('click',()=>{if(selected)focusStation(selected);});
+  function zoom(factor,x=viewport.clientWidth/2,y=viewport.clientHeight/2){cancelAnimationFrame(animation);const next=Math.max(fitScale(),Math.min(3,scale*factor));tx=x-(x-tx)*next/scale;ty=y-(y-ty)*next/scale;scale=next;clamp();render();}
+  $('zoom-in').addEventListener('click',()=>zoom(1.4));$('zoom-out').addEventListener('click',()=>zoom(1/1.4));$('overview').addEventListener('click',fullMap);
+  viewport.addEventListener('wheel',e=>{e.preventDefault();const r=viewport.getBoundingClientRect();zoom(Math.exp(-Math.max(-150,Math.min(150,e.deltaY))*.003),e.clientX-r.left,e.clientY-r.top);},{passive:false});
+  const pointers=new Map();let gesture=null,moved=false;
+  function gestureState(){const p=[...pointers.values()];if(p.length>=2)return {x:(p[0].x+p[1].x)/2,y:(p[0].y+p[1].y)/2,d:Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y)};return p[0]?{...p[0],d:0}:null;}
+  viewport.addEventListener('pointerdown',e=>{if(e.button!==0)return;cancelAnimationFrame(animation);pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});gesture=gestureState();moved=false;viewport.setPointerCapture(e.pointerId);viewport.classList.add('dragging');});
+  viewport.addEventListener('pointermove',e=>{if(!pointers.has(e.pointerId))return;pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});const next=gestureState();if(gesture){const dx=next.x-gesture.x,dy=next.y-gesture.y;if(Math.abs(dx)+Math.abs(dy)>2||pointers.size>1)moved=true;if(next.d&&gesture.d){const r=viewport.getBoundingClientRect();zoom(next.d/gesture.d,gesture.x-r.left,gesture.y-r.top);}tx+=dx;ty+=dy;clamp();render();}gesture=next;});
+  function release(e){const wasMulti=pointers.size>1;pointers.delete(e.pointerId);gesture=gestureState();if(!pointers.size){viewport.classList.remove('dragging');if(!moved&&!wasMulti&&e.type==='pointerup'){const hit=document.elementFromPoint(e.clientX,e.clientY)?.closest('[data-station-id]');if(hit)focusStation(byId.get(hit.dataset.stationId));} } }
+  viewport.addEventListener('pointerup',release);viewport.addEventListener('pointercancel',release);
+  viewport.addEventListener('keydown',e=>{const actions={'+':()=>zoom(1.4),'=':()=>zoom(1.4),'-':()=>zoom(1/1.4),'0':fullMap,ArrowLeft:()=>{tx+=80;},ArrowRight:()=>{tx-=80;},ArrowUp:()=>{ty+=80;},ArrowDown:()=>{ty-=80;}};if(actions[e.key]){e.preventDefault();cancelAnimationFrame(animation);actions[e.key]();clamp();render();}});
+  let previous={w:viewport.clientWidth,h:viewport.clientHeight};new ResizeObserver(()=>{const w=viewport.clientWidth,h=viewport.clientHeight;tx+=(w-previous.w)/2;ty+=(h-previous.h)/2;previous={w,h};clamp();render();}).observe(viewport);
+  document.addEventListener('pointerdown',e=>{if(!e.target.closest('.sidebar')){document.querySelector('.sidebar').classList.remove('search-open');search.setAttribute('aria-expanded',String(!matchMedia('(max-width:760px)').matches));}});
+  $('station-count').textContent=stations.length+' searchable English station labels';
+  search.setAttribute('aria-expanded',String(!matchMedia('(max-width:760px)').matches));
+  updateResults();moveTo(3300,2600,Math.min(viewport.clientWidth/2100,viewport.clientHeight/1650),false);
+  // Optional browser-agent interface; conventional browsers need no support.
+  if(document.modelContext?.registerTool){const controller=new AbortController();window.addEventListener('pagehide',()=>controller.abort(),{once:true});const register=tool=>{try{Promise.resolve(document.modelContext.registerTool(tool,{signal:controller.signal})).catch(()=>{});}catch{}};
+    register({name:'search_stations',description:'Find English metro station labels using partial names and approximate spelling.',inputSchema:{type:'object',properties:{query:{type:'string'}},required:['query'],additionalProperties:false},annotations:{readOnlyHint:true},execute(input){if(!input||typeof input.query!=='string'||input.query.length>200)throw new Error('Provide a query of up to 200 characters.');return StationSearch.rank(input.query,stations).slice(0,20).map(r=>({id:r.station.id,name:r.station.name}));}});
+    register({name:'show_station',description:'Zoom to and highlight a station label on the map using its search result ID.',inputSchema:{type:'object',properties:{id:{type:'string'}},required:['id'],additionalProperties:false},annotations:{readOnlyHint:false},async execute(input){const station=byId.get(input?.id);if(!station)throw new Error('Unknown station ID. Search for a station first.');focusStation(station);await new Promise(r=>setTimeout(r,450));return {id:station.id,name:station.name,highlighted:true};}});
+  }
+})();
